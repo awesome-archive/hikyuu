@@ -1,0 +1,26 @@
+name: win-build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-2019]
+    
+    steps:
+    - uses: xmake-io/github-action-setup-xmake@v1
+    - name: checkout
+      run: git clone https://github.com/fasiondog/hikyuu.git --recursive --depth 1
+    - name: build
+      run: |
+        python --version
+        cd hikyuu
+        pip install click
+        python setup.py build
+    - name: test
+      run: |
+        cd hikyuu
+        python setup.py test

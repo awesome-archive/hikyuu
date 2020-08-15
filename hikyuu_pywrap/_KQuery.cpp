@@ -12,72 +12,39 @@
 using namespace boost::python;
 using namespace hku;
 
-BOOST_PYTHON_FUNCTION_OVERLOADS(KQueryByDate_overload, KQueryByDate, 0, 4);
-BOOST_PYTHON_FUNCTION_OVERLOADS(KQueryByIndex_overload, KQueryByIndex, 0, 4);
-
 void export_KQuery() {
-    def("KQueryByDate", KQueryByDate, KQueryByDate_overload());
-    def("KQueryByIndex", KQueryByIndex, KQueryByIndex_overload());
+    scope in_Query =
+      class_<KQuery>("Query", "K线数据查询条件", init<>())
+        .def(init<int64, optional<int64, KQuery::KType, KQuery::RecoverType> >())
+        .def(init<Datetime, optional<Datetime, KQuery::KType, KQuery::RecoverType> >())
 
-    scope in_Query = class_<KQuery>("KQuery", init<>())
-            .def(init<hku_int64, optional<hku_int64, KQuery::KType, KQuery::RecoverType> >())
-            .def(self_ns::str(self))
-            .add_property("start", &KQuery::start)
-            .add_property("end", &KQuery::end)
-            .add_property("startDatetime", &KQuery::startDatetime)
-            .add_property("endDatetime", &KQuery::endDatetime)
-            .add_property("queryType", &KQuery::queryType)
-            .add_property("kType", &KQuery::kType)
-            .add_property("recoverType", &KQuery::recoverType)
-            .def("getQueryTypeName", &KQuery::getQueryTypeName).staticmethod("getQueryTypeName")
-            .def("getKTypeName", &KQuery::getKTypeName).staticmethod("getKTypeName")
-            .def("getRecoverTypeName", &KQuery::getRecoverTypeName).staticmethod("getRecoverTypeName")
-            .def("getQueryTypeEnum", &KQuery::getQueryTypeEnum).staticmethod("getQueryTypeEnum")
-            .def("getKTypeEnum", &KQuery::getKTypeEnum).staticmethod("getKTypeEnum")
-            .def("getRecoverTypeEnum", &KQuery::getRecoverTypeEnum).staticmethod("getRecoverTypeEnum")
+        .def(self_ns::str(self))
+        .def(self_ns::repr(self))
+
+        .add_property("start", &KQuery::start,
+                      "起始索引，当按日期查询方式创建时无效，为 constant.null_int64")
+        .add_property("end", &KQuery::end,
+                      "结束索引，当按日期查询方式创建时无效，为 constant.null_int64")
+        .add_property("start_datetime", &KQuery::startDatetime,
+                      "起始日期，当按索引查询方式创建时无效，为 constant.null_datetime")
+        .add_property("end_datetime", &KQuery::endDatetime,
+                      "结束日期，当按索引查询方式创建时无效，为 constant.null_datetime")
+        .add_property("query_type", &KQuery::queryType, "查询方式 Query.QueryType")
+        .add_property("ktype", &KQuery::kType, "查询的K线类型 Query.KType")
+        .add_property("recover_type", &KQuery::recoverType, "查询的复权类型 Query.RecoverType")
+
 #if HKU_PYTHON_SUPPORT_PICKLE
-            .def_pickle(normal_pickle_suite<KQuery>())
+        .def_pickle(normal_pickle_suite<KQuery>())
 #endif
-            ;
+      ;
 
-    enum_<KQuery::QueryType>("QueryType")
-            .value("INDEX", KQuery::INDEX)
-            .value("DATE", KQuery::DATE)
-            ;
-
-    /*enum_<KQuery::KType>("KType")
-            .value("MIN", KQuery::MIN)
-            .value("MIN5", KQuery::MIN5)
-            .value("MIN15", KQuery::MIN15)
-            .value("MIN30", KQuery::MIN30)
-            .value("MIN60", KQuery::MIN60)
-            .value("DAY", KQuery::DAY)
-            .value("WEEK", KQuery::WEEK)
-            .value("MONTH", KQuery::MONTH)
-            .value("QUARTER", KQuery::QUARTER)
-            .value("HALFYEAR", KQuery::HALFYEAR)
-            .value("YEAR", KQuery::YEAR)
-
-            //BTC扩展
-            .value("MIN3", KQuery::MIN3)
-            .value("HOUR2", KQuery::HOUR2)
-            .value("HOUR4", KQuery::HOUR4)
-            .value("HOUR6", KQuery::HOUR6)
-            .value("HOUR12", KQuery::HOUR12)
-
-            .value("INVALID_KTYPE", KQuery::INVALID_KTYPE)
-            ;
-        */
+    enum_<KQuery::QueryType>("QueryType").value("INDEX", KQuery::INDEX).value("DATE", KQuery::DATE);
 
     enum_<KQuery::RecoverType>("RecoverType")
-            .value("NO_RECOVER", KQuery::NO_RECOVER)
-            .value("FORWARD", KQuery::FORWARD)
-            .value("BACKWARD", KQuery::BACKWARD)
-            .value("EQUAL_FORWARD", KQuery::EQUAL_FORWARD)
-            .value("EQUAL_BACKWARD", KQuery::EQUAL_BACKWARD)
-            .value("INVALID_RECOVER_TYPE", KQuery::INVALID_RECOVER_TYPE)
-            ;
-
+      .value("NO_RECOVER", KQuery::NO_RECOVER)
+      .value("FORWARD", KQuery::FORWARD)
+      .value("BACKWARD", KQuery::BACKWARD)
+      .value("EQUAL_FORWARD", KQuery::EQUAL_FORWARD)
+      .value("EQUAL_BACKWARD", KQuery::EQUAL_BACKWARD)
+      .value("INVALID_RECOVER_TYPE", KQuery::INVALID_RECOVER_TYPE);
 }
-
-

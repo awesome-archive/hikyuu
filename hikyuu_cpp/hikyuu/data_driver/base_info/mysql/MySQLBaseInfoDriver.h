@@ -12,25 +12,25 @@
 #include "../../BaseInfoDriver.h"
 
 #if defined(_MSC_VER)
-    #include <mysql.h>
+#include <mysql.h>
 #else
-    #include <mysql/mysql.h>
+#include <mysql/mysql.h>
 #endif
 
 namespace hku {
 
-class MySQLBaseInfoDriver: public BaseInfoDriver {
+class MySQLBaseInfoDriver : public BaseInfoDriver {
 public:
-    MySQLBaseInfoDriver(): BaseInfoDriver("mysql") {}
+    MySQLBaseInfoDriver() : BaseInfoDriver("mysql") {}
     virtual ~MySQLBaseInfoDriver();
 
-    virtual bool _init();
-    virtual bool _loadMarketInfo();
-    virtual bool _loadStockTypeInfo();
-    virtual bool _loadStock();
+    virtual bool _init() override;
+    virtual bool _loadMarketInfo() override;
+    virtual bool _loadStockTypeInfo() override;
+    virtual bool _loadStock() override;
 
 private:
-    bool _getStockWeightList(hku_uint64, StockWeightList&);
+    bool _getStockWeightList(uint64, StockWeightList&);
 
 private:
     shared_ptr<MYSQL> m_mysql;

@@ -15,24 +15,22 @@
 
 namespace hku {
 
-class MySQLCloser{
+class MySQLCloser {
 public:
-    void operator()(MYSQL *db){
-        if(db){
+    void operator()(MYSQL *db) {
+        if (db) {
             mysql_close(db);
+            delete db;
+            db = nullptr;
         }
     }
 };
 
-
-MySQLBaseInfoDriver::~MySQLBaseInfoDriver() {
-
-}
-
+MySQLBaseInfoDriver::~MySQLBaseInfoDriver() {}
 
 bool MySQLBaseInfoDriver::_init() {
     shared_ptr<MYSQL> mysql(new MYSQL, MySQLCloser());
-    if (!mysql){
+    if (!mysql) {
         HKU_ERROR("Can't create MYSQL instance!");
         return false;
     }
@@ -75,7 +73,7 @@ bool MySQLBaseInfoDriver::_init() {
     unsigned int port;
     try {
         port = boost::lexical_cast<unsigned int>(port_str);
-    } catch(...) {
+    } catch (...) {
         port = 3306;
     }
 
@@ -88,8 +86,8 @@ bool MySQLBaseInfoDriver::_init() {
         return false;
     }
 
-    if (!mysql_real_connect(mysql.get(), host.c_str(), usr.c_str(),
-            pwd.c_str(), database.c_str(), port, NULL, 0) ) {
+    if (!mysql_real_connect(mysql.get(), host.c_str(), usr.c_str(), pwd.c_str(), database.c_str(),
+                            port, NULL, 0)) {
         HKU_FATAL("Failed to connect to database!");
         return false;
     }
@@ -103,7 +101,6 @@ bool MySQLBaseInfoDriver::_init() {
     return true;
 }
 
-
 bool MySQLBaseInfoDriver::_loadMarketInfo() {
     if (!m_mysql) {
         HKU_ERROR("Null m_mysql!");
@@ -113,9 +110,10 @@ bool MySQLBaseInfoDriver::_loadMarketInfo() {
     MYSQL_RES *result;
     MYSQL_ROW row;
 
-    int res = mysql_query(m_mysql.get(), "select market,name,"
-            "description,code,lastDate from market");
-    if(res) {
+    int res = mysql_query(m_mysql.get(),
+                          "select market,name,"
+                          "description,code,lastDate from market");
+    if (res) {
         HKU_ERROR("mysql_query error! error no: {}", res);
         return false;
     }
@@ -126,23 +124,22 @@ bool MySQLBaseInfoDriver::_loadMarketInfo() {
         return false;
     }
 
-    StockManager& sm = StockManager::instance();
-    while((row = mysql_fetch_row(result))) {
+    StockManager &sm = StockManager::instance();
+    while ((row = mysql_fetch_row(result))) {
         string market(row[0]);
         to_upper(market);
         Datetime last_date;
         try {
-            hku_int64 d = (boost::lexical_cast<hku_uint64>(row[4])*10000);
+            int64 d = (boost::lexical_cast<uint64>(row[4]) * 10000);
             last_date = Datetime(d);
-        } catch(...) {
+        } catch (...) {
             last_date = Null<Datetime>();
         }
 
         try {
-            MarketInfo marketInfo(market, HKU_STR(row[1]), HKU_STR(row[2]),
-                                     row[3], last_date);
-            sm.addMarketInfo(marketInfo);
-        } catch(...) {
+            MarketInfo marketInfo(market, HKU_STR(row[1]), HKU_STR(row[2]), row[3], last_date);
+            sm.loadMarketInfo(marketInfo);
+        } catch (...) {
             HKU_ERROR("Can't get MarketInfo {}", market);
             continue;
         }
@@ -151,7 +148,6 @@ bool MySQLBaseInfoDriver::_loadMarketInfo() {
     mysql_free_result(result);
     return true;
 }
-
 
 bool MySQLBaseInfoDriver::_loadStockTypeInfo() {
     if (!m_mysql) {
@@ -162,10 +158,11 @@ bool MySQLBaseInfoDriver::_loadStockTypeInfo() {
     MYSQL_RES *result;
     MYSQL_ROW row;
 
-    int res = mysql_query(m_mysql.get(), "select sti.type, sti.description, "
-            "sti.tick, sti.tickValue, sti.precision, sti.minTradeNumber, "
-            "sti.maxTradeNumber from stocktypeinfo as sti");
-    if(res) {
+    int res = mysql_query(m_mysql.get(),
+                          "select sti.type, sti.description, "
+                          "sti.tick, sti.tickValue, sti.precision, sti.minTradeNumber, "
+                          "sti.maxTradeNumber from stocktypeinfo as sti");
+    if (res) {
         HKU_ERROR("mysql_query error! error no: {}", res);
         return false;
     }
@@ -176,18 +173,16 @@ bool MySQLBaseInfoDriver::_loadStockTypeInfo() {
         return false;
     }
 
-    StockManager& sm = StockManager::instance();
-    while((row = mysql_fetch_row(result))) {
-        hku_uint32 type = boost::lexical_cast<hku_uint32>(row[0]);
+    StockManager &sm = StockManager::instance();
+    while ((row = mysql_fetch_row(result))) {
+        uint32 type = boost::lexical_cast<uint32>(row[0]);
         try {
-            StockTypeInfo stkTypeInfo(type, HKU_STR(row[1]),
-                    boost::lexical_cast<price_t>(row[2]),
-                    boost::lexical_cast<price_t>(row[3]),
-                    boost::lexical_cast<int>(row[4]),
-                    boost::lexical_cast<size_t>(row[5]),
-                    boost::lexical_cast<size_t>(row[6]));
-            sm.addStockTypeInfo(stkTypeInfo);
-        } catch(...) {
+            StockTypeInfo stkTypeInfo(
+              type, HKU_STR(row[1]), boost::lexical_cast<price_t>(row[2]),
+              boost::lexical_cast<price_t>(row[3]), boost::lexical_cast<int>(row[4]),
+              boost::lexical_cast<size_t>(row[5]), boost::lexical_cast<size_t>(row[6]));
+            sm.loadStockTypeInfo(stkTypeInfo);
+        } catch (...) {
             HKU_ERROR("Can't get StockTypeInfo {}", type);
             continue;
         }
@@ -197,9 +192,7 @@ bool MySQLBaseInfoDriver::_loadStockTypeInfo() {
     return true;
 }
 
-
-bool MySQLBaseInfoDriver::
-_getStockWeightList(hku_uint64 stockid, StockWeightList& out) {
+bool MySQLBaseInfoDriver::_getStockWeightList(uint64 stockid, StockWeightList &out) {
     if (!m_mysql) {
         HKU_ERROR("Null m_mysql!");
         return false;
@@ -208,12 +201,13 @@ _getStockWeightList(hku_uint64 stockid, StockWeightList& out) {
     MYSQL_RES *result;
     MYSQL_ROW row;
 
-    std::stringstream buf (std::stringstream::out);
-    buf<<"select id, date, countAsGift, countForSell, priceForSell, bonus,\
+    std::stringstream buf(std::stringstream::out);
+    buf << "select id, date, countAsGift, countForSell, priceForSell, bonus,\
           countOfIncreasement, totalCount, freeCount from stkweight \
-          where stockid=" << stockid << " order by date";
+          where stockid="
+        << stockid << " order by date";
     int res = mysql_query(m_mysql.get(), buf.str().c_str());
-    if(res) {
+    if (res) {
         HKU_ERROR("mysql_query error! error no: {}", res);
         return false;
     }
@@ -228,7 +222,7 @@ _getStockWeightList(hku_uint64 stockid, StockWeightList& out) {
     if (total != 0)
         out.reserve(total);
 
-    while((row = mysql_fetch_row(result))) {
+    while ((row = mysql_fetch_row(result))) {
         int id = boost::lexical_cast<int>(row[0]);
         Datetime date;
         try {
@@ -242,15 +236,12 @@ _getStockWeightList(hku_uint64 stockid, StockWeightList& out) {
         }
 
         try {
-            out.push_back(StockWeight(date,
-                    boost::lexical_cast<price_t>(row[2]),
-                    boost::lexical_cast<price_t>(row[3]),
-                    boost::lexical_cast<price_t>(row[4]),
-                    boost::lexical_cast<price_t>(row[5]),
-                    boost::lexical_cast<price_t>(row[6]),
-                    boost::lexical_cast<price_t>(row[7]),
-                    boost::lexical_cast<price_t>(row[8])));
-        } catch(...) {
+            out.push_back(StockWeight(
+              date, boost::lexical_cast<price_t>(row[2]), boost::lexical_cast<price_t>(row[3]),
+              boost::lexical_cast<price_t>(row[4]), boost::lexical_cast<price_t>(row[5]),
+              boost::lexical_cast<price_t>(row[6]), boost::lexical_cast<price_t>(row[7]),
+              boost::lexical_cast<price_t>(row[8])));
+        } catch (...) {
             HKU_WARN("Can't get weight record ({})", id);
             continue;
         }
@@ -259,7 +250,6 @@ _getStockWeightList(hku_uint64 stockid, StockWeightList& out) {
     mysql_free_result(result);
     return true;
 }
-
 
 bool MySQLBaseInfoDriver::_loadStock() {
     if (!m_mysql) {
@@ -270,7 +260,7 @@ bool MySQLBaseInfoDriver::_loadStock() {
     MYSQL_RES *result;
     MYSQL_ROW row;
 
-    std::stringstream buf (std::stringstream::out);
+    std::stringstream buf(std::stringstream::out);
     buf << "select stock.stockid, market.market, stock.code, stock.name, "
            "stock.type, stock.valid, stock.startDate, stock.endDate, "
            "stocktypeinfo.tick, stocktypeinfo.tickValue, stocktypeinfo.precision, "
@@ -279,7 +269,7 @@ bool MySQLBaseInfoDriver::_loadStock() {
            "(stock.type = stocktypeinfo.type)) "
            "left outer join market on stock.marketid = market.marketid";
     int res = mysql_query(m_mysql.get(), buf.str().c_str());
-    if(res) {
+    if (res) {
         HKU_ERROR("mysql_query error! error no: {}", res);
         return false;
     }
@@ -290,9 +280,9 @@ bool MySQLBaseInfoDriver::_loadStock() {
         return false;
     }
 
-    StockManager& sm = StockManager::instance();
-    while((row = mysql_fetch_row(result))) {
-        hku_uint64 stockid = boost::lexical_cast<hku_uint64>(row[0]);
+    StockManager &sm = StockManager::instance();
+    while ((row = mysql_fetch_row(result))) {
+        uint64 stockid = boost::lexical_cast<uint64>(row[0]);
         string market(row[1]);
         to_upper(market);
 
@@ -310,7 +300,7 @@ bool MySQLBaseInfoDriver::_loadStock() {
             end_date = Datetime(row[7]);
             if (end_date >= (Datetime::max)())
                 end_date = Null<Datetime>();
-        } catch(...) {
+        } catch (...) {
             end_date = Null<Datetime>();
         }
 
@@ -321,24 +311,24 @@ bool MySQLBaseInfoDriver::_loadStock() {
 
         try {
             Stock stock(market,
-                    row[2], //code
-                    HKU_STR(row[3]), //name
-                    boost::lexical_cast<hku_uint32>(row[4]), //type
-                    boost::lexical_cast<bool>(row[5]), //valid;
-                    start_date, //startDate
-                    end_date, //endDate
-                    boost::lexical_cast<price_t>(row[8]), //tick
-                    boost::lexical_cast<price_t>(row[9]), //tickValue
-                    boost::lexical_cast<int>(row[10]), //precision
-                    boost::lexical_cast<size_t>(row[11]),//minTradeNumber
-                    boost::lexical_cast<size_t>(row[12])//maxTradeNumber
-                    );
+                        row[2],                                // code
+                        HKU_STR(row[3]),                       // name
+                        boost::lexical_cast<uint32>(row[4]),   // type
+                        boost::lexical_cast<bool>(row[5]),     // valid;
+                        start_date,                            // startDate
+                        end_date,                              // endDate
+                        boost::lexical_cast<price_t>(row[8]),  // tick
+                        boost::lexical_cast<price_t>(row[9]),  // tickValue
+                        boost::lexical_cast<int>(row[10]),     // precision
+                        boost::lexical_cast<size_t>(row[11]),  // minTradeNumber
+                        boost::lexical_cast<size_t>(row[12])   // maxTradeNumber
+            );
             StockWeightList weight;
             _getStockWeightList(stockid, weight);
             stock.setWeightList(weight);
-            sm.addStock(stock);
+            sm.loadStock(stock);
 
-        } catch(...) {
+        } catch (...) {
             HKU_ERROR("Can't get MarketInfo {}", market);
             continue;
         }

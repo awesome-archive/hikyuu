@@ -13,6 +13,10 @@
 #define HKU_API
 #endif
 
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
 #include <boost/config.hpp>
 //#include <boost/shared_ptr.hpp>
 //#include <boost/make_shared.hpp>
@@ -33,11 +37,12 @@
 #include "utilities/arithmetic.h"
 #include "utilities/SpendTimer.h"
 #include "utilities/exception.h"
+#include "utilities/util.h"
 
 #if defined(_MSC_VER)
-#pragma warning (disable: 4251)
-#pragma warning (disable: 4290)
-#pragma warning (disable: 4996)
+#pragma warning(disable : 4251)
+#pragma warning(disable : 4290)
+#pragma warning(disable : 4996)
 #endif
 
 namespace hku {
@@ -47,38 +52,58 @@ namespace hku {
  * @{
  */
 
-typedef long long hku_int64;
-typedef unsigned long long hku_uint64;
-typedef int hku_int32;
-typedef unsigned hku_uint32;
-typedef char hku_int8;
-typedef unsigned char hku_uint8;
+#if !defined(int64)
+typedef long long int64;
+#endif
 
+#if !defined(uint64)
+typedef unsigned long long uint64;
+#endif
+
+#if !defined(int32)
+typedef int int32;
+#endif
+
+#if !defined(uint32)
+typedef unsigned uint32;
+#endif
+
+#if !defined(int8)
+typedef char int8;
+#endif
+
+#if !defined(uint8)
+typedef unsigned char uint8;
+#endif
+
+#ifndef MAX_DOUBLE
+#define MAX_DOUBLE std::numeric_limits<double>::max()
+#endif
 
 typedef double price_t;
 
-typedef std::string string;
+using std::string;
 
-using std::shared_ptr;
-using std::make_shared;
 using std::enable_shared_from_this;
+using std::make_shared;
+using std::shared_ptr;
 
-using std::vector;
 using std::list;
 using std::map;
 using std::unordered_map;
+using std::vector;
 
 typedef vector<price_t> PriceList;
 typedef vector<string> StringList;
 
-using std::isnan;
-using std::isinf;
 using std::isfinite;
+using std::isinf;
+using std::isnan;
 
 using fmt::format;
 
 /** @} */
 
-} /*namespace*/
+}  // namespace hku
 
 #endif /* DATATYPE_H_ */

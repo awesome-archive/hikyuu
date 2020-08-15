@@ -14,15 +14,15 @@
 
 namespace hku {
 
-class OPLineCondition: public ConditionBase {
+class OPLineCondition : public ConditionBase {
 public:
     OPLineCondition();
     OPLineCondition(const Indicator&);
     virtual ~OPLineCondition();
 
-    virtual void _calculate();
-    virtual void _reset();
-    virtual ConditionPtr _clone();
+    virtual void _calculate() override;
+    virtual void _reset() override;
+    virtual ConditionPtr _clone() override;
 
 private:
     Indicator m_op;
@@ -32,10 +32,10 @@ private:
 //============================================
 #if HKU_SUPPORT_SERIALIZATION
     friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int version) {
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(ConditionBase);
-        ar & BOOST_SERIALIZATION_NVP(m_op);
+    template <class Archive>
+    void serialize(Archive& ar, const unsigned int version) {
+        ar& BOOST_SERIALIZATION_BASE_OBJECT_NVP(ConditionBase);
+        ar& BOOST_SERIALIZATION_NVP(m_op);
     }
 #endif
 };

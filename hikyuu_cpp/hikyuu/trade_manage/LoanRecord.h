@@ -15,6 +15,7 @@
 #if HKU_SUPPORT_SERIALIZATION
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/split_free.hpp>
+#include <boost/serialization/split_member.hpp>
 #endif
 
 namespace hku {
@@ -25,9 +26,8 @@ namespace hku {
  */
 class HKU_API LoanRecord {
 public:
-    LoanRecord(): datetime(Null<Datetime>()), value(0.0) {}
-    LoanRecord(const Datetime& datetime, price_t value):
-        datetime(datetime), value(value) {}
+    LoanRecord() : datetime(Null<Datetime>()), value(0.0) {}
+    LoanRecord(const Datetime& datetime, price_t value) : datetime(datetime), value(value) {}
 
     Datetime datetime;
     price_t value;
@@ -35,21 +35,21 @@ public:
 #if HKU_SUPPORT_SERIALIZATION
 private:
     friend class boost::serialization::access;
-    template<class Archive>
-    void save(Archive & ar, const unsigned int version) const {
+    template <class Archive>
+    void save(Archive& ar, const unsigned int version) const {
         namespace bs = boost::serialization;
-        hku::hku_uint64 date_number = datetime.number();
-        ar & bs::make_nvp("datetime", date_number);
-        ar & BOOST_SERIALIZATION_NVP(value);
+        hku::uint64 date_number = datetime.number();
+        ar& bs::make_nvp("datetime", date_number);
+        ar& BOOST_SERIALIZATION_NVP(value);
     }
 
-    template<class Archive>
-    void load(Archive & ar, const unsigned int version) {
+    template <class Archive>
+    void load(Archive& ar, const unsigned int version) {
         namespace bs = boost::serialization;
-        hku::hku_uint64 date_number;
-        ar & bs::make_nvp("datetime", date_number);
+        hku::uint64 date_number;
+        ar& bs::make_nvp("datetime", date_number);
         datetime = Datetime(date_number);
-        ar & BOOST_SERIALIZATION_NVP(value);
+        ar& BOOST_SERIALIZATION_NVP(value);
     }
 
     BOOST_SERIALIZATION_SPLIT_MEMBER()
@@ -58,7 +58,7 @@ private:
 
 typedef vector<LoanRecord> LoanRecordList;
 
-HKU_API std::ostream & operator<<(std::ostream &, const LoanRecord&);
+HKU_API std::ostream& operator<<(std::ostream&, const LoanRecord&);
 
 } /* namespace hku */
 #endif /* LOANRECORD_H_ */

@@ -5,8 +5,14 @@
  *      Author: fasiondog
  */
 
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
+#include <fmt/format.h>
 #include "utilities/IniParser.h"
 #include "hikyuu.h"
+#include "version.h"
 
 namespace hku {
 
@@ -23,7 +29,7 @@ void hikyuu_init(const string& config_file_name) {
     } catch (std::logic_error& e) {
         HKU_FATAL("Reading configure error!\n{}", e.what());
         exit(1);
-    } catch(...) {
+    } catch (...) {
         HKU_WARN("Reading configure error! Don't know  error!");
         exit(1);
     }
@@ -64,9 +70,22 @@ void hikyuu_init(const string& config_file_name) {
     sm.init(baseParam, blockParam, kdataParam, preloadParam, hkuParam);
 }
 
-
 string getVersion() {
     return HKU_VERSION;
 }
 
-} /* namespace */
+std::string HKU_API getVersionWithBuild() {
+#if defined(__arm__)
+    return fmt::format("{}_{}_arm", HKU_VERSION, HKU_VERSION_BUILD);
+#elif defined(__aarch64__)
+    return fmt::format("{}_{}_aarch64", HKU_VERSION, HKU_VERSION_BUILD);
+#elif defined(__x86_64__) || defined(_WIN64)
+    return fmt::format("{}_{}_x64", HKU_VERSION, HKU_VERSION_BUILD);
+#elif defined(__i386__) || defined(_WIN32)
+    return fmt::format("{}_{}_i386", HKU_VERSION, HKU_VERSION_BUILD);
+#else
+    return fmt::format("{}_{}_unknow_arch", HKU_VERSION, HKU_VERSION_BUILD);
+#endif
+}
+
+}  // namespace hku

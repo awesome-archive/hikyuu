@@ -21,10 +21,10 @@ class HKU_API Indicator;
  */
 class HKU_API KData {
 public:
-    KData(){}
+    KData() {}
     KData(const KData&);
     KData(const Stock& stock, const KQuery& query);
-    virtual ~KData() { }
+    virtual ~KData() {}
 
     KData& operator=(const KData&);
 
@@ -40,7 +40,9 @@ public:
     KRecord getKRecordByDate(const Datetime& datetime) const;
 
     /** 同getKRecord @see getKRecord */
-    KRecord operator[](size_t pos) const { return getKRecord(pos); }
+    KRecord operator[](size_t pos) const {
+        return getKRecord(pos);
+    }
 
     /** 同getKRecordByDate @see getKRecordByDate */
     KRecord operator[](const Datetime& datetime) const {
@@ -72,22 +74,21 @@ public:
 
     /** 开盘价 */
     Indicator open() const;
-    
+
     /** 最高价 */
     Indicator high() const;
-    
+
     /** 收盘价 */
     Indicator close() const;
-    
+
     /** 最低价 */
     Indicator low() const;
-    
+
     /** 成交量 */
     Indicator vol() const;
-    
+
     /** 成交金额 */
     Indicator amo() const;
-
 
 private:
     KDataImpPtr m_imp;
@@ -105,44 +106,66 @@ private:
  * </pre>
  * @ingroup StockManage
  */
-HKU_API std::ostream& operator <<(std::ostream &os, const KData& kdata);
+HKU_API std::ostream& operator<<(std::ostream& os, const KData& kdata);
 
+/**
+ * 根据股票标识按指定的查询条件查询的 K 线数据
+ * @param market_code 股票标识
+ * @param query 查询条件
+ * @ingroup StockManage
+ */
+KData HKU_API getKData(const string& market_code, const KQuery& query);
 
-inline KData::KData(const KData& x) {
-    m_imp = x.m_imp;
-}
+/**
+ * 根据股票标识直接按日期查询获取相应的 K 线数据
+ * @param market_code 股票标识
+ * @param start 起始日期
+ * @param end 结束日期
+ * @param ktype K线类型
+ * @param recoverType 复权类型
+ * @ingroup StockManage
+ */
+KData HKU_API getKData(const string& market_code, const Datetime& start = Datetime::min(),
+                       const Datetime& end = Null<Datetime>(), KQuery::KType ktype = KQuery::DAY,
+                       KQuery::RecoverType recoverType = KQuery::NO_RECOVER);
 
+/**
+ * 根据股票标识直接按索引位置查询获取相应的 K 线数据
+ * @param market_code 股票标识
+ * @param start 起始索引
+ * @param end 结束索引
+ * @param ktype K线类型
+ * @param recoverType 复权类型
+ * @ingroup StockManage
+ */
+KData HKU_API getKData(const string& market_code, int64 start = 0, int64 end = Null<int64>(),
+                       KQuery::KType ktype = KQuery::DAY,
+                       KQuery::RecoverType recoverType = KQuery::NO_RECOVER);
+
+inline KData::KData(const KData& x) : m_imp(x.m_imp) {}
 
 inline KData& KData::operator=(const KData& x) {
-    if(this == &x)
+    if (this == &x)
         return *this;
-
-    if (m_imp != x.m_imp)
-        m_imp = x.m_imp;
-
+    m_imp = x.m_imp;
     return *this;
 }
-
 
 inline DatetimeList KData::getDatetimeList() const {
     if (empty()) {
         return DatetimeList();
     }
-    return getStock().getDatetimeList(startPos(), lastPos() + 1,
-                                      getQuery().kType());
+    return getStock().getDatetimeList(startPos(), lastPos() + 1, getQuery().kType());
 }
-
 
 inline KRecord KData::getKRecord(size_t pos) const {
-    return m_imp->getKRecord(pos); //如果为空，将抛出异常
+    return m_imp->getKRecord(pos);  //如果为空，将抛出异常
 }
-
 
 inline KRecord KData::getKRecordByDate(const Datetime& datetime) const {
     size_t pos = getPos(datetime);
     return pos != Null<size_t>() ? getKRecord(pos) : Null<KRecord>();
 }
-
 
 inline size_t KData::getPos(const Datetime& datetime) const {
     return m_imp ? m_imp->getPos(datetime) : Null<size_t>();
@@ -156,26 +179,21 @@ inline bool KData::empty() const {
     return m_imp ? m_imp->empty() : true;
 }
 
-
 inline KQuery KData::getQuery() const {
     return m_imp ? m_imp->getQuery() : Null<KQuery>();
 }
-
 
 inline Stock KData::getStock() const {
     return m_imp ? m_imp->getStock() : Null<Stock>();
 }
 
-
 inline size_t KData::startPos() const {
     return m_imp ? m_imp->startPos() : 0;
 }
 
-
 inline size_t KData::endPos() const {
     return m_imp ? m_imp->endPos() : 0;
 }
-
 
 inline size_t KData::lastPos() const {
     return m_imp ? m_imp->lastPos() : 0;

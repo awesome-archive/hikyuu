@@ -14,14 +14,14 @@
 
 namespace hku {
 
-class TwoLineEnvironment: public EnvironmentBase {
+class TwoLineEnvironment : public EnvironmentBase {
 public:
     TwoLineEnvironment();
     TwoLineEnvironment(const Indicator& fast, const Indicator& slow);
     virtual ~TwoLineEnvironment();
 
-    virtual void _calculate();
-    virtual EnvironmentPtr _clone();
+    virtual void _calculate() override;
+    virtual EnvironmentPtr _clone() override;
 
 private:
     Indicator m_fast;
@@ -32,11 +32,11 @@ private:
 //============================================
 #if HKU_SUPPORT_SERIALIZATION
     friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int version) {
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(EnvironmentBase);
-        ar & BOOST_SERIALIZATION_NVP(m_fast);
-        ar & BOOST_SERIALIZATION_NVP(m_slow);
+    template <class Archive>
+    void serialize(Archive& ar, const unsigned int version) {
+        ar& BOOST_SERIALIZATION_BASE_OBJECT_NVP(EnvironmentBase);
+        ar& BOOST_SERIALIZATION_NVP(m_fast);
+        ar& BOOST_SERIALIZATION_NVP(m_slow);
     }
 #endif
 };

@@ -13,13 +13,12 @@
 #include <string>
 #include <list>
 #include <map>
-#include <boost/utility.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #if defined(_MSC_VER)
-#pragma warning(disable: 4251)
-#pragma warning(disable: 4275)
-#pragma warning(disable: 4290)
+#pragma warning(disable : 4251)
+#pragma warning(disable : 4275)
+#pragma warning(disable : 4290)
 #endif
 
 #ifndef HKU_API
@@ -52,11 +51,15 @@ namespace hku {
  * @date 20100519
  * @ingroup Utilities
  */
- 
-class HKU_API IniParser : boost::noncopyable {
+
+class HKU_API IniParser {
 public:
     typedef std::list<std::string> StringList;
-    typedef boost::shared_ptr<std::list<std::string> > StringListPtr;
+    typedef std::shared_ptr<std::list<std::string> > StringListPtr;
+
+    IniParser(const IniParser&) = delete;
+    IniParser& operator=(const IniParser&) = delete;
+
     IniParser();
     virtual ~IniParser();
 
@@ -70,20 +73,20 @@ public:
     StringListPtr getOptionList(const std::string& section) const;
 
     std::string get(const std::string& section, const std::string& option,
-            const std::string& default_str = std::string()) const;
+                    const std::string& default_str = std::string()) const;
 
     //以下默认值类型使用string的原因是因为int/float/double/bool类型没有空对象
     int getInt(const std::string& section, const std::string& option,
-            const std::string& default_str = std::string()) const;
+               const std::string& default_str = std::string()) const;
 
     float getFloat(const std::string& section, const std::string& option,
-            const std::string& default_str = std::string()) const;
+                   const std::string& default_str = std::string()) const;
 
     double getDouble(const std::string& section, const std::string& option,
-            const std::string& default_str = std::string()) const;
+                     const std::string& default_str = std::string()) const;
 
     bool getBool(const std::string& section, const std::string& option,
-            const std::string& default_str = std::string()) const;
+                 const std::string& default_str = std::string()) const;
 
 private:
     typedef std::map<std::string, std::string> item_map_type;
@@ -91,6 +94,6 @@ private:
     section_map_type m_sections;
 };
 
-} /* namespace */
+}  // namespace hku
 
 #endif /* INIFILE_H_ */

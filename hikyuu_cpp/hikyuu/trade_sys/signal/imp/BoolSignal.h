@@ -14,14 +14,14 @@
 
 namespace hku {
 
-class BoolSignal: public SignalBase {
+class BoolSignal : public SignalBase {
 public:
     BoolSignal();
     BoolSignal(const Indicator& buy, const Indicator& sell, const string& kpart);
     virtual ~BoolSignal();
 
-    virtual SignalPtr _clone();
-    virtual void _calculate();
+    virtual SignalPtr _clone() override;
+    virtual void _calculate() override;
 
 private:
     Indicator m_bool_buy;
@@ -31,12 +31,12 @@ private:
 // 序列化支持
 //============================================
 #if HKU_SUPPORT_SERIALIZATION
-    friend class boost::serialization::access; \
-    template<class Archive> \
-    void serialize(Archive & ar, const unsigned int version) { \
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(SignalBase); \
-        ar & BOOST_SERIALIZATION_NVP(m_bool_buy);
-        ar & BOOST_SERIALIZATION_NVP(m_bool_sell);
+    friend class boost::serialization::access;
+    template <class Archive>
+    void serialize(Archive& ar, const unsigned int version) {
+        ar& BOOST_SERIALIZATION_BASE_OBJECT_NVP(SignalBase);
+        ar& BOOST_SERIALIZATION_NVP(m_bool_buy);
+        ar& BOOST_SERIALIZATION_NVP(m_bool_sell);
     }
 #endif
 };

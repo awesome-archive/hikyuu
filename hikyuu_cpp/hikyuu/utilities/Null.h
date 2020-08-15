@@ -9,8 +9,9 @@
 #ifndef NULL_H_
 #define NULL_H_
 
-#include <boost/limits.hpp>
-#include <boost/type_traits.hpp>
+#include <cstddef>
+#include <limits>
+#include <type_traits>
 
 namespace hku {
 
@@ -103,11 +104,11 @@ public:
     Null() {}
     operator double() {
         return (std::numeric_limits<double>::quiet_NaN)();
-        //return (std::numeric_limits<double>::max)();
+        // return (std::numeric_limits<double>::max)();
     }
 };
 
 /** @} */
-} /* namesapce hku */
+}  // namespace hku
 
 #endif /* NULL_H_ */

@@ -9,9 +9,7 @@
 #include <sstream>
 #include <fstream>
 
-#include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
-
+#include "arithmetic.h"
 #include "IniParser.h"
 
 namespace hku {
@@ -20,10 +18,19 @@ namespace hku {
 //仅限IniParser内部使用
 class ParsingError {
 public:
-    ParsingError() { m_haveError = false; }
+    ParsingError() {
+        m_haveError = false;
+    }
+
     void append(size_t lineno, const std::string& line);
-    bool haveError() { return m_haveError; }
-    std::string str() { return m_info.str(); }
+
+    bool haveError() {
+        return m_haveError;
+    }
+
+    std::string str() {
+        return m_info.str();
+    }
 
 private:
     std::stringstream m_info;
@@ -37,14 +44,9 @@ void ParsingError::append(size_t lineno, const std::string& line) {
     }
 }
 
+IniParser::IniParser() {}
 
-IniParser::IniParser() {
-
-}
-
-IniParser::~IniParser() {
-
-}
+IniParser::~IniParser() {}
 
 /**
  * 读取并分析指定的ini文件
@@ -59,7 +61,7 @@ void IniParser::read(const std::string& filename) {
         throw(std::invalid_argument("Can't read file(" + filename + ")!"));
     }
 
-    size_t line_no = 0;   //当前行号，用于记录错误信息
+    size_t line_no = 0;          //当前行号，用于记录错误信息
     ParsingError parsing_error;  //记录格式分析错误
 
     std::string section;
@@ -69,7 +71,7 @@ void IniParser::read(const std::string& filename) {
 
     while (std::getline(inifile, line_str)) {
         line_no++;
-        boost::trim(line_str);
+        trim(line_str);
 
         //空行或注释行，跳过
         if (line_str.empty() || line_str.at(0) == ';') {
@@ -80,58 +82,57 @@ void IniParser::read(const std::string& filename) {
         size_t pos = line_str.find(';');
         if (pos != std::string::npos) {
             line_str.assign(line_str, 0, pos);
-            boost::trim(line_str);
+            trim(line_str);
         }
 
-        //section行
+        // section行
         if (line_str.at(0) == '[') {
             size_t len = line_str.size();
-            if(line_str[len-1] != ']') {
+            if (line_str[len - 1] != ']') {
                 parsing_error.append(line_no, line_str);
                 continue;
             }
 
-            section.assign(line_str, 1, len-2);
-            boost::trim(section);
-            if(section.empty()) {
+            section.assign(line_str, 1, len - 2);
+            trim(section);
+            if (section.empty()) {
                 parsing_error.append(line_no, line_str);
                 continue;
             }
 
             m_sections[section];
 
-        }else {
+        } else {
             if (section.empty()) {
                 parsing_error.append(line_no, "Missing section header!");
                 break;  //缺少section定义，后续无须处理，直接跳出循环
             }
 
             pos = line_str.find('=');
-            if(pos == std::string::npos || pos == line_str.size()-1){
+            if (pos == std::string::npos || pos == line_str.size() - 1) {
                 parsing_error.append(line_no, line_str);
                 continue;
             }
 
             key.assign(line_str, 0, pos);
-            boost::trim(key);
+            trim(key);
             if (key.empty()) {
                 parsing_error.append(line_no, line_str);
                 continue;
             }
 
-            value.assign(line_str, pos+1, std::string::npos);
-            boost::trim(value);
+            value.assign(line_str, pos + 1, std::string::npos);
+            trim(value);
             if (value.empty()) {
                 parsing_error.append(line_no, line_str);
                 continue;
             }
 
             m_sections[section][key] = value;
-
         }
     }
 
-    if (parsing_error.haveError()){
+    if (parsing_error.haveError()) {
         inifile.close();
         throw(std::logic_error(parsing_error.str()));
     }
@@ -157,12 +158,12 @@ bool IniParser::hasSection(const std::string& section) const {
  * 判断指定option是否存在
  */
 bool IniParser::hasOption(const std::string& section, const std::string& option) const {
-    if(m_sections.count(section) == 0) {
+    if (m_sections.count(section) == 0) {
         return false;
     }
 
-    //if(m_sections[section].count(option) == 0) {
-    if(m_sections.find(section)->second.count(option) == 0) {
+    // if(m_sections[section].count(option) == 0) {
+    if (m_sections.find(section)->second.count(option) == 0) {
         return false;
     }
 
@@ -208,7 +209,8 @@ IniParser::StringListPtr IniParser::getOptionList(const std::string& section) co
  * @throw std::invalid_argument 当指定option不存在对应值，并且没有指定缺省值时，抛出该异常
  * @param section 指定的section
  * @param option 指定的option
- * @param default_str 缺省值，在不存在对应的option值时，返回该值。当该值为空时，表示没有缺省值，此时如果不存在对应option值，
+ * @param default_str
+ * 缺省值，在不存在对应的option值时，返回该值。当该值为空时，表示没有缺省值，此时如果不存在对应option值，
  *                    将抛出std::invalid_argument异常。默认为空，没有指定缺省值。
  */
 std::string IniParser::get(const std::string& section, const std::string& option,
@@ -219,13 +221,13 @@ std::string IniParser::get(const std::string& section, const std::string& option
     }
 
     if (m_sections.find(section)->second.count(option) == 0) {
-        if(default_str.empty()) {
+        if (default_str.empty()) {
             throw(std::invalid_argument("No option(" + option + ") in section(" + section + ")"));
-        }else {
+        } else {
             result.assign(default_str);
-            boost::trim(result);
+            trim(result);
         }
-    }else {
+    } else {
         result.assign(m_sections.find(section)->second.find(option)->second);
     }
 
@@ -243,24 +245,23 @@ std::string IniParser::get(const std::string& section, const std::string& option
  *                    默认为空，没有指定缺省值。
  */
 int IniParser::getInt(const std::string& section, const std::string& option,
-        const std::string& default_str) const {
-    int result;
+                      const std::string& default_str) const {
+    int result = 0;
+    size_t remain = 0;
 
     //先检查default_str是否可以转换为int
     if (!default_str.empty()) {
-        try{
-            result = boost::lexical_cast<int>(default_str);
-        }catch(boost::bad_lexical_cast&){
+        result = std::stoi(default_str, &remain);
+        if (remain != default_str.size()) {
             throw(std::invalid_argument("Invalid default value: " + default_str));
         }
     }
 
     std::string value_str = get(section, option, default_str);
-
-    try{
-        result = boost::lexical_cast<int>(value_str);
-    }catch(boost::bad_lexical_cast& e) {
-        throw(std::domain_error(e.what()));
+    remain = 0;
+    result = std::stoi(value_str, &remain);
+    if (remain != value_str.size()) {
+        throw(std::invalid_argument("This option cannot be converted to an integer! " + value_str));
     }
 
     return result;
@@ -277,24 +278,23 @@ int IniParser::getInt(const std::string& section, const std::string& option,
  *                    默认为空，没有指定缺省值。
  */
 float IniParser::getFloat(const std::string& section, const std::string& option,
-        const std::string& default_str) const {
+                          const std::string& default_str) const {
     float result;
+    size_t remain = 0;
 
     //先检查default_str是否可以转换为float
     if (!default_str.empty()) {
-        try{
-            result = boost::lexical_cast<float>(default_str);
-        }catch(boost::bad_lexical_cast&){
+        result = std::stof(default_str, &remain);
+        if (remain != default_str.size()) {
             throw(std::invalid_argument("Invalid default value: " + default_str));
         }
     }
 
     std::string value_str = get(section, option, default_str);
-
-    try{
-        result = boost::lexical_cast<float>(value_str);
-    }catch(boost::bad_lexical_cast& e) {
-        throw(std::domain_error(e.what()));
+    remain = 0;
+    result = std::stof(value_str, &remain);
+    if (remain != value_str.size()) {
+        throw(std::invalid_argument("This option cannot be converted to an float! " + value_str));
     }
 
     return result;
@@ -311,24 +311,23 @@ float IniParser::getFloat(const std::string& section, const std::string& option,
  *                    默认为空，没有指定缺省值。
  */
 double IniParser::getDouble(const std::string& section, const std::string& option,
-        const std::string& default_str) const {
+                            const std::string& default_str) const {
     double result;
+    size_t remain = 0;
 
     //先检查default_str是否可以转换为float
     if (!default_str.empty()) {
-        try{
-            result = boost::lexical_cast<double>(default_str);
-        }catch(boost::bad_lexical_cast&){
+        result = std::stod(default_str, &remain);
+        if (remain != default_str.size()) {
             throw(std::invalid_argument("Invalid default value: " + default_str));
         }
     }
 
     std::string value_str = get(section, option, default_str);
-
-    try{
-        result = boost::lexical_cast<double>(value_str);
-    }catch(boost::bad_lexical_cast& e) {
-        throw(std::domain_error(e.what()));
+    remain = 0;
+    result = std::stod(value_str, &remain);
+    if (remain != value_str.size()) {
+        throw(std::invalid_argument("This option cannot be converted to an double! " + value_str));
     }
 
     return result;
@@ -347,43 +346,42 @@ double IniParser::getDouble(const std::string& section, const std::string& optio
  *                    默认为空，没有指定缺省值。
  */
 bool IniParser::getBool(const std::string& section, const std::string& option,
-        const std::string& default_str) const {
-
+                        const std::string& default_str) const {
     //先检查default_str是否可以转换为bool
     std::string new_default_str(default_str);
     if (!default_str.empty()) {
         if (new_default_str != "1" && new_default_str != "0") {
-            boost::to_upper(new_default_str);
+            to_upper(new_default_str);
             if (new_default_str == "TRUE" || new_default_str == "YES" || new_default_str == "ON") {
                 new_default_str.assign("1");
-            }else if (new_default_str == "FALSE" || new_default_str == "NO" || new_default_str == "OFF") {
+            } else if (new_default_str == "FALSE" || new_default_str == "NO" ||
+                       new_default_str == "OFF") {
                 new_default_str.assign("0");
-            }else {
+            } else {
                 throw(std::invalid_argument("Invalid default value: " + default_str));
             }
         }
     }
 
     std::string value_str = get(section, option, new_default_str);
-    if(value_str == "1") {
+    if (value_str == "1") {
         return true;
     }
 
-    if(value_str == "0") {
+    if (value_str == "0") {
         return false;
     }
 
-    boost::to_upper(value_str);
-    if(value_str == "TRUE" || value_str == "YES" || value_str == "ON") {
+    to_upper(value_str);
+    if (value_str == "TRUE" || value_str == "YES" || value_str == "ON") {
         return true;
     }
 
-    if(value_str == "FALSE" || value_str == "NO" || value_str == "OFF") {
+    if (value_str == "FALSE" || value_str == "NO" || value_str == "OFF") {
         return false;
     }
 
     throw(std::domain_error(value_str + " can not be translated to bool!"));
 }
 
-
-} /* namespace */
+}  // namespace hku

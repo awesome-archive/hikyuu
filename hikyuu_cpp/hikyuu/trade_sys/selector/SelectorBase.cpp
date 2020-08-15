@@ -9,12 +9,12 @@
 
 namespace hku {
 
-HKU_API std::ostream & operator<<(std::ostream& os, const SelectorBase& st) {
+HKU_API std::ostream& operator<<(std::ostream& os, const SelectorBase& st) {
     os << "Selector(" << st.name() << ", " << st.getParameter() << ")";
     return os;
 }
 
-HKU_API std::ostream & operator<<(std::ostream& os, const SelectorPtr& st) {
+HKU_API std::ostream& operator<<(std::ostream& os, const SelectorPtr& st) {
     if (st) {
         os << *st;
     } else {
@@ -24,20 +24,12 @@ HKU_API std::ostream & operator<<(std::ostream& os, const SelectorPtr& st) {
     return os;
 }
 
-SelectorBase::SelectorBase()
-: m_name("SelectorBase"), m_count(0), m_pre_date(Datetime::min()) {
-    setParam<int>("freq", 1); //已Bar为单位
-}
+SelectorBase::SelectorBase() : m_name("SelectorBase"), m_count(0), m_pre_date(Datetime::min()) {}
 
 SelectorBase::SelectorBase(const string& name)
-: m_name(name), m_count(0), m_pre_date(Datetime::min()) {
-    setParam<int>("freq", 1);
-}
+: m_name(name), m_count(0), m_pre_date(Datetime::min()) {}
 
-
-SelectorBase::~SelectorBase() {
-
-}
+SelectorBase::~SelectorBase() {}
 
 void SelectorBase::clear() {
     m_count = 0;
@@ -61,13 +53,13 @@ SelectorPtr SelectorBase::clone() {
     SelectorPtr p;
     try {
         p = _clone();
-    } catch(...) {
+    } catch (...) {
         HKU_ERROR("Subclass _clone failed!");
         p = SelectorPtr();
     }
 
     if (!p || p.get() == this) {
-        HKU_ERROR("Failed clone! Will use self-ptr!" );
+        HKU_ERROR("Failed clone! Will use self-ptr!");
         return shared_from_this();
     }
 
@@ -79,12 +71,12 @@ SelectorPtr SelectorBase::clone() {
 
     SystemList::const_iterator iter = m_sys_list.begin();
     for (; iter != m_sys_list.end(); ++iter) {
-        p->m_sys_list.push_back((*iter)->clone(true, false));
+        // TODO
+        p->m_sys_list.push_back((*iter)->clone());
     }
 
     return p;
 }
-
 
 void SelectorBase::addStock(const Stock& stock, const SystemPtr& protoSys) {
     if (stock.isNull()) {
@@ -97,14 +89,12 @@ void SelectorBase::addStock(const Stock& stock, const SystemPtr& protoSys) {
         return;
     }
 
-    SYSPtr sys = protoSys->clone(true, false);
+    SYSPtr sys = protoSys->clone();
     sys->setStock(stock);
     m_sys_list.push_back(sys);
 }
 
-
-void SelectorBase::addStockList(const StockList& stkList,
-                                const SystemPtr& protoSys) {
+void SelectorBase::addStockList(const StockList& stkList, const SystemPtr& protoSys) {
     if (!protoSys) {
         HKU_WARN("Try add Null protoSys, will be discard!");
         return;
@@ -117,29 +107,9 @@ void SelectorBase::addStockList(const StockList& stkList,
             continue;
         }
 
-        SYSPtr sys = protoSys->clone(true, false);
+        SYSPtr sys = protoSys->clone();
         m_sys_list.push_back(sys);
     }
 }
-
-bool SelectorBase::changed(Datetime date) {
-    if (date <= m_pre_date || date == Null<Datetime>())
-        return false;
-
-    int freq = getParam<int>("freq");
-    if (freq <= 0) {
-        freq = 1;
-    }
-
-    m_count++;
-    if (m_count >= freq){
-        m_count = 0;
-        m_pre_date = date;
-        return true;
-    }
-
-    return false;
-}
-
 
 } /* namespace hku */

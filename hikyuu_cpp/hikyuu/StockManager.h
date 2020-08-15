@@ -8,7 +8,6 @@
 #ifndef STOCKMANAGER_H_
 #define STOCKMANAGER_H_
 
-#include "utilities/IniParser.h"
 #include "utilities/Parameter.h"
 #include "data_driver/DataDriverFactory.h"
 #include "Block.h"
@@ -40,11 +39,12 @@ public:
      * @param preloadParam
      * @param hikyuuParam
      */
-    void init(const Parameter& baseInfoParam,
-              const Parameter& blockParam,
-              const Parameter& kdataParam,
-              const Parameter& preloadParam = default_preload_param(),
+    void init(const Parameter& baseInfoParam, const Parameter& blockParam,
+              const Parameter& kdataParam, const Parameter& preloadParam = default_preload_param(),
               const Parameter& hikyuuParam = default_other_param());
+
+    /** 主动退出并释放资源 */
+    static void quit();
 
     Parameter getBaseInfoDriverParameter() const;
     Parameter getBlockDriverParameter() const;
@@ -90,7 +90,7 @@ public:
      * @param type 证券类型
      * @return 对应的证券类型信息，如果不存在，则返回Null<StockTypeInf>()
      */
-    StockTypeInfo getStockTypeInfo(hku_uint32 type) const;
+    StockTypeInfo getStockTypeInfo(uint32 type) const;
 
     /** 获取市场简称列表 */
     MarketList getAllMarket() const;
@@ -117,29 +117,28 @@ public:
     BlockList getBlockList();
 
     //目前支持"SH"
-    DatetimeList getTradingCalendar(const KQuery& query,
-            const string& market = "SH");
+    DatetimeList getTradingCalendar(const KQuery& query, const string& market = "SH");
 
     /**
      * 初始化时，添加Stock，仅供BaseInfoDriver子类使用
      * @param stock
      * @return true 成功 | false 失败
      */
-    bool addStock(const Stock& stock);
+    bool loadStock(const Stock& stock);
 
     /**
      * 初始化时，添加市场信息
      * @param marketInfo
      * @return
      */
-    bool addMarketInfo(const MarketInfo& marketInfo);
+    bool loadMarketInfo(const MarketInfo& marketInfo);
 
     /**
      * 初始化时，添加证券类型信息
      * @param stkTypeInfo
      * @return
      */
-    bool addStockTypeInfo(const StockTypeInfo& stkTypeInfo);
+    bool loadStockTypeInfo(const StockTypeInfo& stkTypeInfo);
 
     /**
      * 从CSV文件（K线数据）增加临时的Stock，可用于只有CSV格式的K线数据时，进行临时测试
@@ -154,14 +153,10 @@ public:
      * @param maxTradeNumber 单笔最大交易量，默认1000000
      * @return
      */
-    Stock addTempCsvStock(const string& code,
-            const string& day_filename,
-            const string& min_filename,
-            price_t tick = 0.01,
-            price_t tickValue = 0.01,
-            int precision = 2,
-            size_t minTradeNumber = 1,
-            size_t maxTradeNumber = 1000000);
+    Stock addTempCsvStock(const string& code, const string& day_filename,
+                          const string& min_filename, price_t tick = 0.01, price_t tickValue = 0.01,
+                          int precision = 2, size_t minTradeNumber = 1,
+                          size_t maxTradeNumber = 1000000);
 
     /**
      * 移除增加的临时Stock
@@ -171,14 +166,18 @@ public:
 
 public:
     typedef StockMapIterator const_iterator;
-    const_iterator begin() const { return m_stockDict.begin(); }
-    const_iterator end() const { return m_stockDict.end(); }
+    const_iterator begin() const {
+        return m_stockDict.begin();
+    }
+    const_iterator end() const {
+        return m_stockDict.end();
+    }
 
 private:
-    StockManager() { }
+    StockManager();
 
 private:
-    static shared_ptr<StockManager> m_sm;
+    static StockManager* m_sm;
     string m_tmpdir;
     string m_datadir;
     BlockInfoDriverPtr m_blockDriver;
@@ -188,7 +187,7 @@ private:
     typedef unordered_map<string, MarketInfo> MarketInfoMap;
     MarketInfoMap m_marketInfoDict;
 
-    typedef unordered_map<hku_uint32, StockTypeInfo> StockTypeInfoMap;
+    typedef unordered_map<uint32, StockTypeInfo> StockTypeInfoMap;
     StockTypeInfoMap m_stockTypeInfo;
 
     Parameter m_baseInfoDriverParam;
@@ -197,7 +196,6 @@ private:
     Parameter m_preloadParam;
     Parameter m_hikyuuParam;
 };
-
 
 inline size_t StockManager::size() const {
     return m_stockDict.size();
@@ -231,6 +229,6 @@ inline BaseInfoDriverPtr StockManager::getBaseInfoDriver() const {
     return DataDriverFactory::getBaseInfoDriver(m_baseInfoDriverParam);
 }
 
-} /* namespace */
+}  // namespace hku
 
 #endif /* STOCKMANAGER_H_ */

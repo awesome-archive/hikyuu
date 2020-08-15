@@ -1,11 +1,18 @@
 target("hikyuu")
-    set_kind("shared")
+    if is_mode("debug") then 
+        set_kind("static")
+    else
+        set_kind("shared")
+    end
     
+    add_packages("fmt", "spdlog")
+
     add_includedirs("..")
 
     -- set version for release
     set_configdir("./")
     add_configfiles("$(projectdir)/config.h.in")
+    add_configfiles("$(projectdir)/version.h.in")
 
     if is_plat("windows") then
         add_cxflags("-wd4819")  
@@ -14,6 +21,7 @@ target("hikyuu")
         add_cxflags("-wd4834")  --C++17 discarding return value of function with 'nodiscard' attribute
         add_cxflags("-wd4996")
         add_cxflags("-wd4244")  --discable double to int
+        add_cxflags("-wd4566")
     else
         add_rpathdirs("$ORIGIN")
         add_cxflags("-Wno-sign-compare", "-Wno-missing-braces")
@@ -25,7 +33,11 @@ target("hikyuu")
         add_defines("PY_VERSION_HEX=0x03000000")
         add_includedirs("../../hikyuu_extern_libs/src/sqlite3")
         add_deps("sqlite3")
-        add_packages("hdf5")
+        if is_mode("release") then
+            add_packages("hdf5")
+        else
+            add_packages("hdf5_D")
+        end
         add_packages("mysql")
     end
     

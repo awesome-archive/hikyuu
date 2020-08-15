@@ -5,15 +5,21 @@
  *      Author: fasiondog
  */
 
-#include <iostream>
+#include "config.h"
+#include "GlobalInitializer.h"
 #include "Log.h"
-#include <spdlog/sinks/stdout_color_sinks.h>
-//#include "spdlog/sinks/ostream_sink.h"
+
+#if USE_SPDLOG_LOGGER
+// 使用 stdout_color 将无法将日志输出重定向至 python
+//#include <spdlog/sinks/stdout_color_sinks.h>
+#include <iostream>
+#include "spdlog/sinks/ostream_sink.h"
 //#include "spdlog/sinks/rotating_file_sink.h"
 
-#if HKU_USE_ASYNC_LOGGER
+#if HKU_USE_SPDLOG_ASYNC_LOGGER
 #include <spdlog/async.h>
-#endif /* HKU_USE_ASYNC_LOGGER */
+#endif /* HKU_USE_SPDLOG_ASYNC_LOGGER */
+#endif /* #if USE_SPDLOG_LOGGER */
 
 namespace hku {
 
@@ -23,62 +29,78 @@ LOG_LEVEL get_log_level() {
     return g_log_level;
 }
 
-void set_log_level(LOG_LEVEL level) {
-    g_log_level = level;
-    spdlog::get("hikyuu")->set_level((spdlog::level::level_enum)level);
-}
-
 /**********************************************
  * Use SPDLOG for logging
  *********************************************/
-#if HKU_USE_ASYNC_LOGGER
-std::shared_ptr<spdlog::async_logger> init_logger() {
-    //auto stdout_sink = std::make_shared<spdlog::sinks::ostream_sink_mt>(std::cout, true);
-    auto stdout_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+#if USE_SPDLOG_LOGGER
+std::shared_ptr<spdlog::logger> getHikyuuLogger() {
+    return spdlog::get("hikyuu");
+}
+
+#if HKU_USE_SPDLOG_ASYNC_LOGGER
+void initLogger() {
+    auto stdout_sink = std::make_shared<spdlog::sinks::ostream_sink_mt>(std::cout, true);
+    // auto stdout_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     stdout_sink->set_level(spdlog::level::trace);
-    
+
     spdlog::init_thread_pool(8192, 1);
-    std::vector<spdlog::sink_ptr> sinks {stdout_sink};
-    auto logger = std::make_shared<spdlog::async_logger>("hikyuu", 
-        sinks.begin(), sinks.end(), spdlog::thread_pool(), spdlog::async_overflow_policy::block);
+    std::vector<spdlog::sink_ptr> sinks{stdout_sink};
+    auto logger = std::make_shared<spdlog::async_logger>("hikyuu", sinks.begin(), sinks.end(),
+                                                         spdlog::thread_pool(),
+                                                         spdlog::async_overflow_policy::block);
 
     logger->set_level(spdlog::level::trace);
     logger->flush_on(spdlog::level::trace);
-    //logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v [%!]");
     logger->set_pattern("%Y-%m-%d %H:%M:%S.%e [%^HKU-%L%$] - %v [%!]");
     spdlog::register_logger(logger);
-    return logger;
 }
 
-std::shared_ptr<spdlog::async_logger> g_hikyuu_logger = init_logger();
+#else /* #if HKU_USE_SPDLOG_ASYNC_LOGGER */
 
-std::shared_ptr<spdlog::async_logger> getHikyuuLogger() {
-    return g_hikyuu_logger;
-}
-#else
-
-std::shared_ptr<spdlog::logger> init_logger() {
-    //auto stdout_sink = std::make_shared<spdlog::sinks::ostream_sink_mt>(std::cout, true);
-    auto stdout_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+void initLogger() {
+    auto stdout_sink = std::make_shared<spdlog::sinks::ostream_sink_mt>(std::cout, true);
+    // auto stdout_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     stdout_sink->set_level(spdlog::level::trace);
-    
-    auto logger = std::shared_ptr<spdlog::logger>(
-            new spdlog::logger("hikyuu", stdout_sink));
-
+    auto logger = std::make_shared<spdlog::logger>("hikyuu", stdout_sink);
     logger->set_level(spdlog::level::trace);
     logger->flush_on(spdlog::level::trace);
-    //logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v [%!]");
     logger->set_pattern("%Y-%m-%d %H:%M:%S.%e [%^HKU-%L%$] - %v [%!]");
     spdlog::register_logger(logger);
-    return logger;
 }
 
-std::shared_ptr<spdlog::logger> g_hikyuu_logger = init_logger();
+#endif /* #if HKU_USE_SPDLOG_ASYNC_LOGGER */
 
-std::shared_ptr<spdlog::logger> HKU_API getHikyuuLogger() {
-    return g_hikyuu_logger;
+void set_log_level(LOG_LEVEL level) {
+    g_log_level = level;
+    getHikyuuLogger()->set_level((spdlog::level::level_enum)level);
 }
 
-#endif /* #if HKU_USE_ASYNC_LOGGER */
+#else /* #if USE_SPDLOG_LOGGER */
+/**********************************************
+ * Use SPDLOG for logging
+ *********************************************/
+void initLogger() {}
 
-} /* namespace hku */
+void set_log_level(LOG_LEVEL level) {
+    g_log_level = level;
+}
+
+std::string HKU_API getLocalTime() {
+    auto now = std::chrono::system_clock::now();
+    uint64_t dis_millseconds =
+      std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() -
+      std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count() * 1000;
+    time_t tt = std::chrono::system_clock::to_time_t(now);
+#ifdef _WIN32
+    struct tm now_time;
+    localtime_s(&now_time, &tt);
+#else
+    struct tm now_time;
+    localtime_r(&tt, &now_time);
+#endif
+    return fmt::format("{:%Y-%m-%d %H:%M:%S}.{:<3d}", now_time, dis_millseconds);
+}
+
+#endif /* #if USE_SPDLOG_LOGGER */
+
+}  // namespace hku

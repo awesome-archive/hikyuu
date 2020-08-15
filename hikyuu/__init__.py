@@ -48,7 +48,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from .core import *
+from .extend import *
+from .deprecated import *
+from .indicator import *
+from .trade_manage import *
+from .trade_sys import *
 
-__version__ = getVersion()
-
+__version__ = get_version()

@@ -9,12 +9,17 @@
 #ifndef DATETIME_H_
 #define DATETIME_H_
 
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
+#include <chrono>
 #include <string>
 #include <vector>
-#include <boost/date_time/posix_time/posix_time.hpp>
+#include "TimeDelta.h"
 
 #if defined(_MSC_VER)
-#pragma warning(disable: 4251)
+#pragma warning(disable : 4251)
 #endif
 
 #ifndef HKU_API
@@ -37,29 +42,83 @@ public:
     Datetime();
 
     Datetime(const Datetime&);
-    Datetime(int year, int month, int day,
-             int hh = 0, int mm = 0, int sec = 0);
+
+    /**
+     * 构造函数
+     * @param year 年
+     * @param month 月
+     * @param day 日
+     * @param hh 时
+     * @param mm 分
+     * @param sec 秒
+     * @param millisec 毫秒
+     * @param microsec 微秒
+     */
+    Datetime(long year, long month, long day, long hh = 0, long mm = 0, long sec = 0,
+             long millisec = 0, long microsec = 0);
 
     /** 从boost::gregorian::date构造日期类型 */
-    Datetime(const bd::date&);
+    explicit Datetime(const bd::date&);
 
     /** 从boost::posix_time::ptime构造 */
-    Datetime(const bt::ptime&);
+    explicit Datetime(const bt::ptime&);
 
-    /** 通过数字方式构造日期类型，数字格式：YYYYMMDDhhmmss，如 200101010000 */
+    /**
+     * 通过数字方式构造日期类型
+     * @details 支持以下两种数字格式
+     * <pre>
+     *     1、YYYYMMDDhhmm，如 200101010000
+     *     2、YYYYMMDD, 如 20010101
+     * </pre>
+     */
     explicit Datetime(unsigned long long);
 
-    /** 通过字符串方式构造日期类型，如："2001-01-01 18:00:00.12345" */
+    /**
+     * 通过字符串方式构造日期类型
+     * @details 支持以下格式的字符串构造：
+     * <pre>
+     *     1、"2001-01-01" 或 "2001/1/1"
+     *     2、"20010101"
+     *     3、"2001-01-01 18:00:00.12345"
+     *     4、"20010101T181159"
+     * </pre>
+     */
     explicit Datetime(const std::string&);
 
     Datetime& operator=(const Datetime&);
 
-    int year() const;
-    int month() const;
-    int day() const;
-    int hour() const;
-    int minute() const;
-    int second() const;
+    /** 年份，如果是 Null 将抛出异常 */
+    long year() const;
+
+    /** 月份 [1, 12]，如果是 Null 将抛出异常 */
+    long month() const;
+
+    /** 日 [1, 31]，如果是 Null 将抛出异常 */
+    long day() const;
+
+    /** 时 [0, 23]，如果是 Null 将抛出异常 */
+    long hour() const;
+
+    /** 分钟 [0, 59]，如果是 Null 将抛出异常 */
+    long minute() const;
+
+    /** 秒 [0, 59]，如果是 Null 将抛出异常 */
+    long second() const;
+
+    /** 毫秒 [0, 999]，如果是 Null 将抛出异常 */
+    long millisecond() const;
+
+    /** 微秒 [0, 999]，如果是 Null 将抛出异常 */
+    long microsecond() const;
+
+    /** 是否为 Null<Datetime> */
+    bool isNull() const;
+
+    /** 日期运算，加指定时长 */
+    Datetime operator+(TimeDelta d) const;
+
+    /** 日期运算，减指定时长 */
+    Datetime operator-(TimeDelta d) const;
 
     /**
      * 返回如YYYYMMDDhhmmss格式的数字，方便比较操作，
@@ -67,13 +126,29 @@ public:
      */
     unsigned long long number() const;
 
-    std::string toString() const;
+    /**
+     * 转化为字符串，供打印阅读，格式：
+     * <pre>
+     * 毫秒数、微秒数为零时： 2019-01-02 01:01:00
+     * 毫秒数、微秒数不为零时：2019-01-02 01:01:00:000001
+     * </pre>
+     */
+    std::string str() const;
+
+    /**
+     * 转化为字符串,
+     * 格式为：Datetime(year, month, day, hour, minute, second, millisecond, microsecond)
+     */
+    std::string repr() const;
 
     /** 返回 boost::posix_time::ptime */
     bt::ptime ptime() const;
 
     /** 返回 boost::gregorian::date */
     bd::date date() const;
+
+    /** 返回 std::time_t */
+    std::time_t to_time_t() const;
 
     /** 返回一周中的第几天，周日为0，周一为1 */
     int dayOfWeek() const;
@@ -83,7 +158,7 @@ public:
 
     /** 当日起始日期，即0点 */
     Datetime startOfDay() const;
-    
+
     /** 当日结束日期，即23:59:59 */
     Datetime endOfDay() const;
 
@@ -175,14 +250,13 @@ private:
     bt::ptime m_data;
 };
 
-HKU_API std::ostream & operator<<(std::ostream &, const Datetime&);
+HKU_API std::ostream& operator<<(std::ostream&, const Datetime&);
 
 /**
  * 日期列表
  * @ingroup DataType
  */
 typedef std::vector<Datetime> DatetimeList;
-
 
 /**
  * 获取指定范围的日历日期列表[start, end)，仅仅是日，不含时分秒
@@ -191,7 +265,6 @@ typedef std::vector<Datetime> DatetimeList;
  * @return [start, end)范围内的日历日期
  */
 DatetimeList HKU_API getDateRange(const Datetime& start, const Datetime& end);
-
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -231,65 +304,33 @@ inline bool operator<=(const Datetime& d1, const Datetime& d2) {
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+// 加、减法运算补充
+//
+///////////////////////////////////////////////////////////////////////////////
+inline Datetime operator+(const TimeDelta& delta, const Datetime& date) {
+    return date + delta;
+}
+
+inline TimeDelta operator-(const Datetime& d1, const Datetime& d2) {
+    return TimeDelta(d1.ptime() - d2.ptime());
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
 // inline 成员函数定义
 //
 ///////////////////////////////////////////////////////////////////////////////
 
 inline Datetime::Datetime() {
     bd::date d(bd::pos_infin);
-    m_data = bt::ptime(d, bt::time_duration(0,0,0));
+    m_data = bt::ptime(d, bt::time_duration(0, 0, 0));
 }
 
-inline Datetime::Datetime(const Datetime& d) {
-    m_data = d.m_data;
-}
+inline Datetime::Datetime(const Datetime& d) : m_data(d.m_data) {}
 
-inline Datetime::Datetime(const bd::date& d) {
-    m_data = bt::ptime(d, bt::time_duration(0,0,0));
-}
+inline Datetime::Datetime(const bd::date& d) : m_data(bt::ptime(d, bt::time_duration(0, 0, 0))) {}
 
-inline Datetime::Datetime(const bt::ptime& d) {
-    m_data = d;
-}
-
-inline Datetime::Datetime(const std::string& ts) {
-    if (ts == "+infinity") {
-        bd::date d(bd::pos_infin);
-        m_data = bt::ptime(d, bt::time_duration(0,0,0));
-    } else {
-        m_data = bt::time_from_string(ts);
-    }
-}
-
-inline Datetime::Datetime(int year, int month, int day,
-                           int hh, int mm, int sec) {
-    bd::date d(year, month, day);
-    m_data = bt::ptime(d, bt::time_duration(hh, mm, sec));
-}
-
-inline int Datetime::year() const {
-    return m_data.date().year();
-}
-
-inline int Datetime::month() const {
-    return m_data.date().month();
-}
-
-inline int Datetime::day() const {
-    return m_data.date().day();
-}
-
-inline int Datetime::hour() const {
-    return int(m_data.time_of_day().hours());
-}
-
-inline int Datetime::minute() const {
-    return int(m_data.time_of_day().minutes());
-}
-
-inline int Datetime::second() const {
-    return int(m_data.time_of_day().seconds());
-}
+inline Datetime::Datetime(const bt::ptime& d) : m_data(d) {}
 
 inline bt::ptime Datetime::ptime() const {
     return m_data;
@@ -297,6 +338,11 @@ inline bt::ptime Datetime::ptime() const {
 
 inline bd::date Datetime::date() const {
     return m_data.date();
+}
+
+inline std::time_t Datetime::to_time_t() const {
+    std::tm tt = bt::to_tm(m_data);
+    return std::mktime(&tt);
 }
 
 inline int Datetime::dayOfWeek() const {
@@ -309,6 +355,14 @@ inline int Datetime::dayOfYear() const {
 
 inline Datetime Datetime::startOfDay() const {
     return Datetime(date());
+}
+
+inline Datetime Datetime::operator+(TimeDelta d) const {
+    return Datetime(m_data + d.time_duration());
+}
+
+inline Datetime Datetime::operator-(TimeDelta d) const {
+    return Datetime(m_data - d.time_duration());
 }
 
 } /* namespace hku */

@@ -12,6 +12,7 @@ import unittest
 from test_init import *
 from hikyuu.trade_sys import *
 
+
 class KDataTest(unittest.TestCase):
     def test_null_kdata(self):
         k = KData()
@@ -22,10 +23,10 @@ class KDataTest(unittest.TestCase):
         self.assertEqual(k.lastPos, 0)
         stock = k.getStock()
         self.assertEqual(stock.isNull(), True)
-        
+
     def test_kdata(self):
         stock = sm["Sh000001"]
-        q = KQuery(0, 10)
+        q = Query(0, 10)
         k = stock.getKData(q)
         self.assertEqual(k.size(), 10)
         self.assertEqual(k.empty(), False)
@@ -33,23 +34,23 @@ class KDataTest(unittest.TestCase):
         self.assertEqual(k.endPos, 10)
         self.assertEqual(k.lastPos, 9)
         self.assertEqual(k[0].datetime, Datetime(199012190000))
-        self.assert_(abs(k[0].openPrice - 96.05) < 0.0001)
-        self.assert_(abs(k[0].highPrice - 99.980) < 0.0001)
-        self.assert_(abs(k[0].lowPrice - 95.79) < 0.0001)
-        self.assert_(abs(k[0].closePrice - 99.98) < 0.0001)
-        self.assert_(abs(k[0].transAmount - 49.4) < 0.0001)
-        self.assert_(abs(k[0].transCount - 1260) < 0.0001)
-        self.assert_(abs(k[1].openPrice - 104.3) < 0.0001)
-        self.assert_(abs(k[9].openPrice - 127.61) < 0.0001)
-        
+        self.assert_(abs(k[0].open - 96.05) < 0.0001)
+        self.assert_(abs(k[0].high - 99.980) < 0.0001)
+        self.assert_(abs(k[0].low - 95.79) < 0.0001)
+        self.assert_(abs(k[0].close - 99.98) < 0.0001)
+        self.assert_(abs(k[0].amount - 49.4) < 0.0001)
+        self.assert_(abs(k[0].volume - 1260) < 0.0001)
+        self.assert_(abs(k[1].open - 104.3) < 0.0001)
+        self.assert_(abs(k[9].open - 127.61) < 0.0001)
+
     def test_pickle(self):
         if not constant.pickle_support:
             return
-        
+
         import pickle as pl
         filename = sm.tmpdir() + "/KData.plk"
         fh = open(filename, 'wb')
-        kdata = sm['sh000001'].getKData(KQuery(10, 20))
+        kdata = sm['sh000001'].getKData(Query(10, 20))
         pl.dump(kdata, fh)
         fh.close()
         fh = open(filename, 'rb')
@@ -58,7 +59,7 @@ class KDataTest(unittest.TestCase):
         self.assertEqual(kdata.size(), b.size())
         for i in range(len(kdata)):
             self.assertEqual(kdata[i], b[i])
-        
-                 
+
+
 def suite():
     return unittest.TestLoader().loadTestsFromTestCase(KDataTest)

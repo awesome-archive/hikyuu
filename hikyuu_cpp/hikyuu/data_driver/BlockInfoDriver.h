@@ -14,13 +14,18 @@
 
 namespace hku {
 
+/**
+ * 板块数据驱动
+ * @ingroup DataDriver
+ */
 class HKU_API BlockInfoDriver {
     PARAMETER_SUPPORT
 
 public:
     BlockInfoDriver(const string& name);
-    virtual ~BlockInfoDriver() {};
+    virtual ~BlockInfoDriver(){};
 
+    /** 获取驱动名称 */
     const string& name() const;
 
     /**
@@ -65,10 +70,8 @@ protected:
 
 typedef shared_ptr<BlockInfoDriver> BlockInfoDriverPtr;
 
-
-HKU_API std::ostream & operator<<(std::ostream&, const BlockInfoDriver&);
-HKU_API std::ostream & operator<<(std::ostream&, const BlockInfoDriverPtr&);
-
+HKU_API std::ostream& operator<<(std::ostream&, const BlockInfoDriver&);
+HKU_API std::ostream& operator<<(std::ostream&, const BlockInfoDriverPtr&);
 
 inline const string& BlockInfoDriver::name() const {
     return m_name;
